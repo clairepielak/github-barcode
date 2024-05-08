@@ -1,0 +1,148 @@
+import {
+  Camera,
+  CameraSwitchControl,
+  DataCaptureContext,
+  DataCaptureView,
+  FrameSourceState,
+  configure,
+  resetConfigure,
+} from "scandit-web-datacapture-core";
+import { BarcodeTrackingSession, SymbologySettings, TrackedBarcode } from "scandit-web-datacapture-barcode";
+import {
+  BarcodeTracking,
+  BarcodeTrackingBasicOverlay,
+  BarcodeTrackingBasicOverlayStyle,
+  BarcodeTrackingScenario,
+  BarcodeTrackingSettings,
+  Symbology,
+  SymbologyDescription,
+  barcodeCaptureLoader,
+} from "scandit-web-datacapture-barcode";
+
+import { SdcUiButton } from "./components/sdcUiButton";
+import { SdcUiDrawerBottom } from "./components/sdcUiDrawerBottom";
+import { SdcUiBarcodeList, SdcUiBarcodeListItem } from "./components/sdcUiBarcodeList";
+import { define, removeAllChildNodes } from "./utils";
+
+let barcodeTracking: BarcodeTracking | null = null; // Declare barcodeTracking at the global level
+
+async function run(): Promise<void> {
+  define({
+    "sdc-ui-button": SdcUiButton,
+    "sdc-ui-drawer-bottom": SdcUiDrawerBottom,
+    "sdc-ui-barcode-list": SdcUiBarcodeList,
+    "sdc-ui-barcode-list-item": SdcUiBarcodeListItem,
+  });
+  document.body.classList.add("componentsDefined");
+
+  // To visualize the ongoing loading process on screen, the view must be connected before the configure phase.
+  const view: DataCaptureView = new DataCaptureView();
+
+  // Connect the data capture view to the HTML element.
+  view.connectToElement(document.getElementById("data-capture-view")!);
+
+  // Show the loading layer
+  view.showProgressBar();
+
+  await configure({
+    licenseKey: "Your_Scandit_License_Key", // Replace with your Scandit license key
+    libraryLocation: new URL("library/engine/", document.baseURI).toString(),
+    moduleLoaders: [barcodeCaptureLoader({ highEndBlurryRecognition: true })],
+  });
+
+  // Set the progress bar to be in an indeterminate state
+  view.setProgressBarPercentage(null);
+  view.setProgressBarMessage("Accessing Camera...");
+
+  // Create the data capture context.
+  const context: DataCaptureContext = await DataCaptureContext.create();
+
+  // To visualize the ongoing barcode capturing process on screen, set up a data capture view that renders the
+  // camera preview. The view must be connected to the data capture context.
+  await view.setContext(context);
+
+  const camera: Camera = Camera.default;
+  const cameraSettings = BarcodeTracking.recommendedCameraSettings;
+  await camera.applySettings(cameraSettings);
+  await context.setFrameSource(camera);
+
+  // The barcode tracking process is configured through barcode tracking settings,
+  // they are then applied to the barcode tracking instance that manages barcode recognition.
+  const settings: BarcodeTrackingSettings = BarcodeTrackingSettings.forScenario(BarcodeTrackingScenario.A);
+
+  settings.enableSymbologies([
+    //only really need code 39
+    Symbology.DataMatrix,
+    Symbology.Code39,
+    Symbology.Code128,
+    Symbology.InterleavedTwoOfFive,
+  ]);
+
+  // Create a new barcode tracking mode with the settings from above.
+  barcodeTracking = await BarcodeTracking.forContext(context, settings);
+  // Disable the barcode tracking mode until the camera is accessed.
+  await barcodeTracking.setEnabled(true);
+
+  let trackedBarcodes: Record<string, TrackedBarcode>;
+  // Register a listener to get updates about tracked barcodes.
+  barcodeTracking.addListener({
+    didUpdateSession: (barcodeTrackingMode: BarcodeTracking, session: BarcodeTrackingSession) => {
+      trackedBarcodes = session.trackedBarcodes;
+    },
+  });
+
+  // Add a control to be able to switch cameras.
+  view.addControl(new CameraSwitchControl());
+
+  // Add a barcode tracking overlay to the data capture view to render the location of tracked barcodes on top of
+  // the video preview. This is optional, but recommended for better visual feedback.
+  await BarcodeTrackingBasicOverlay.withBarcodeTrackingForViewWithStyle(
+    barcodeTracking,
+    view,
+    BarcodeTrackingBasicOverlayStyle.Frame
+  );
+
+  // Switch the camera on to start streaming frames.
+  // The camera is started asynchronously and will take some time to completely turn on.
+  await camera.switchToDesiredState(FrameSourceState.On);
+  await barcodeTracking.setEnabled(true);
+  view.hideProgressBar();
+
+  // Define other variables and event listeners here...
+}
+
+// Define the resetScannerSession function here...
+function resetScannerSession() {
+  if (barcodeTracking) {
+    // Clear all fields
+    const partNumberInput = document.getElementById("partNumber") as HTMLInputElement;
+    const quantityInput = document.getElementById("quantity") as HTMLInputElement;
+    const supplierInput = document.getElementById("supplier") as HTMLInputElement;
+    const serialNumberInput = document.getElementById("serialNumber") as HTMLInputElement;
+
+    partNumberInput.value = "";
+    quantityInput.value = "";
+    supplierInput.value = "";
+    serialNumberInput.value = "";
+    const canvas = document.getElementById("capturedImage") as HTMLCanvasElement;
+    const context = canvas.getContext("2d");
+    if (context) {
+      context.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    // Enable barcode tracking
+    barcodeTracking.setEnabled(true);
+  }
+}
+
+// Define the reset button event listener here...
+const resetButton = document.getElementById("resetButton");
+if (resetButton) {
+  resetButton.addEventListener("click", resetScannerSession);
+}
+
+run().catch((error: unknown) => {
+  // eslint-disable-next-line no-console
+  console.error(error);
+  alert(JSON.stringify(error, null, 2));
+});

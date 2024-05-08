@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MatrixScan Simple Sample</title>
+    <script type="module" src="index.ts"></script>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        background: rgb(229, 232, 233);
+        font-family: Helvetica, sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      #data-capture-view {
+        width: 90%; /* Adjust width as needed */
+        max-width: 650px; /* Limit maximum width */
+        /* Adjust spacing from top */
+        background: #fff; /* Background color */
+        padding: 20px; /* Adjust padding */
+        border-radius: px; /* Add border radius for rounded corners */
+      }
+
+      #labelInfo {
+        width: 100%;
+        margin-top: 20px; /* Adjust spacing from data capture view */
+      }
+
+      #labelInfo table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      #labelInfo table td {
+        padding: 8px;
+      }
+
+      .fixed-bottom {
+        margin-top: 20px; /* Adjust spacing from table */
+      }
+
+      .fixed-bottom sdc-ui-button {
+        margin: 0 auto;
+      }
+      Button {
+        padding: 12px 24px;
+        font-size: 16px;
+        background-color: #fff;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="data-capture-view">
+      <!-- Content for data capture view -->
+    </div>
+    <div id="labelInfo">
+      <table>
+        <tr>
+          <td colspan="2"><button id="resetButton">Reset Scanner</button></td>
+        </tr>
+        <tr>
+          <td>P/N</td>
+          <td><input type="text" id="partNumber" value="" /></td>
+        </tr>
+        <tr>
+          <td>QTY</td>
+          <td>
+            <input type="text" id="quantity" value="" />
+          </td>
+        </tr>
+        <tr>
+          <td>SUP</td>
+          <td><input type="text" id="supplier" value="" /></td>
+        </tr>
+        <tr>
+          <td>LOT</td>
+          <td><input type="text" id="lot" value="" /></td>
+        </tr>
+        <tr>
+          <td>SERIAL</td>
+          <td><input type="text" id="serialNumber" /></td>
+        </tr>
+      </table>
+    </div>
+    <div class="fixed-bottom">
+      <sdc-ui-button id="doneButton">Submit</sdc-ui-button>
+    </div>
+    <sdc-ui-drawer-bottom>
+      <sdc-ui-barcode-list slot="body"></sdc-ui-barcode-list>
+      <sdc-ui-button slot="footer"> Scan again </sdc-ui-button>
+    </sdc-ui-drawer-bottom>
+  </body>
+</html>
