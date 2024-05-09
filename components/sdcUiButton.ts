@@ -1,10 +1,11 @@
-/* eslint-disable import/extensions */
 import type { CSSResult, TemplateResult } from "lit";
 import { LitElement, css, html } from "lit";
-import { customElement } from "lit/decorators.js";
+import { customElement, property } from "lit/decorators.js";
 
 @customElement("sdc-ui-button")
 export class SdcUiButton extends LitElement {
+  @property({ type: Boolean }) disabled = false;
+
   public static styles: CSSResult[] = [
     css`
       button {
@@ -18,7 +19,7 @@ export class SdcUiButton extends LitElement {
   ];
 
   public render(): TemplateResult {
-    return html`<button><slot /></button>`;
+    return html`<button ?disabled="${this.disabled}"><slot /></button>`;
   }
 }
 
